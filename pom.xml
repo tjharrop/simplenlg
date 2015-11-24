@@ -5,6 +5,13 @@
   <version>0.0.1-SNAPSHOT</version>
   <name>SimpleNLGDemo</name>
   <description>This project aims to demonstrate capabilities of simplenlg</description>
+  <repositories>
+  	<repository>
+  		<id>simplenlg.local</id>
+  		<name>simplenlg</name>
+  		<url>file:${simplenlg.basedir}/repo</url>
+  	</repository>
+  </repositories>
   <dependencies>
   	<dependency>
   		<groupId>com.sparkjava</groupId>
@@ -25,6 +32,31 @@
   		<groupId>com.google.code.gson</groupId>
   		<artifactId>gson</artifactId>
   		<version>2.3.1</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>com.junit.lib</groupId>
+  		<artifactId>junit</artifactId>
+  		<version>4.4</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>com.simplenlg.lib</groupId>
+  		<artifactId>simplenlg</artifactId>
+  		<version>4.4.2</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>com.lexAccess.dist</groupId>
+  		<artifactId>lexAccess</artifactId>
+  		<version>2011</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>com.lexCheck.api</groupId>
+  		<artifactId>lexCheck</artifactId>
+  		<version>2006</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>com.lvg.api</groupId>
+  		<artifactId>lvg</artifactId>
+  		<version>2011</version>
   	</dependency>
   </dependencies>
   <build>
