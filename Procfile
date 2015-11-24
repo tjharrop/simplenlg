@@ -1,1 +1,1 @@
-web: java $JAVA_OPTS -cp target/classes/simplenlg:target/dependency/* Main
+web: java -jar target/simplenlg-0.0.1-SNAPSHOT-jar-with-dependencies.jar 
