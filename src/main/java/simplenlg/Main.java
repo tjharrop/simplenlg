@@ -165,68 +165,64 @@ public class Main {
 			NLGFactory nlgFactory = new NLGFactory(lexicon);
 			Realiser realiser = new Realiser(lexicon);
 			System.out.println(request.body());
-			try {
-				ObjectMapper mapper = new ObjectMapper(); 
-				
-				NewSimpleNLGSentencePayload symbolsList = mapper.readValue(request.body(), NewSimpleNLGSentencePayload.class);
+			
+			ObjectMapper mapper = new ObjectMapper(); 
+			Gson jsonToJava = new GsonBuilder().create();
+			
+			NewSimpleNLGSentencePayload symbolsList = jsonToJava.fromJson(request.body(), NewSimpleNLGSentencePayload.class);
+			System.out.println(symbolsList.getObject());
+			System.out.println(request.body());
+			
+			if (!symbolsList.isValid()){
 				System.out.println(symbolsList.getObject());
-				System.out.println(request.body());
-				
-				if (!symbolsList.isValid()){
-					System.out.println(symbolsList.getObject());
-					response.status(HTTP_BAD_REQUEST);
-					return "";
-				}
-				if(symbolsList.getTypeSentence().equals("SubjectVerbObject") && symbolsList.isValidSubVerbObj()) {
-					
-					SPhraseSpec sentence = nlgFactory.createClause();
-					sentence.setSubject(symbolsList.getSubject());
-					sentence.setVerb(symbolsList.getVerb());
-					sentence.setObject(symbolsList.getObject());
-					if(request.headers().contains("negateSentence") &&  request.headers("negateSentence").equals("True")){
-						sentence.setFeature(Feature.NEGATED, true);
-					}
-					if(!symbolsList.getVerbTense().equals("present")){
-						switch(symbolsList.getVerbTense()){
-							case "past": 
-								sentence.setFeature(Feature.TENSE, Tense.PAST);
-								break;
-							case "future":
-								sentence.setFeature(Feature.TENSE, Tense.FUTURE);
-								break;
-							case "present_progressive":
-								sentence.setFeature(Feature.PROGRESSIVE, true);
-								break;
-							case "past_progressive": 
-								sentence.setFeature(Feature.PROGRESSIVE, true);
-								sentence.setFeature(Feature.TENSE, Tense.PAST);
-								break;
-							case "future_progressive":
-								sentence.setFeature(Feature.PROGRESSIVE, true);
-								sentence.setFeature(Feature.TENSE, Tense.FUTURE);
-								break;
-						}
-					}
-					
-					String realizedSentence = realiser.realiseSentence(sentence);
-					//response.header("Access-Control-Allow-Origin", "http://localhost:4000");
-					response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
-					response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
-					response.header("Access-Control-Allow-Headers", "Content-Type");
-					response.header("Access-Control-Allow-Headers", "negateSentence");
-					response.status(200);
-					response.type("application/json");
-					
-					//Response.SC_ACCEPTED;
-					System.out.println(realizedSentence);
-					return gson.toJson(realizedSentence);	
-				} 
-				
-			} catch(JsonParseException jpe){
 				response.status(HTTP_BAD_REQUEST);
 				return "";
 			}
-			
+			if(symbolsList.getTypeSentence().equals("SubjectVerbObject") && symbolsList.isValidSubVerbObj()) {
+				
+				SPhraseSpec sentence = nlgFactory.createClause();
+				sentence.setSubject(symbolsList.getSubject());
+				sentence.setVerb(symbolsList.getVerb());
+				sentence.setObject(symbolsList.getObject());
+				if(request.headers().contains("negateSentence") &&  request.headers("negateSentence").equals("True")){
+					sentence.setFeature(Feature.NEGATED, true);
+				}
+				if(!symbolsList.getVerbTense().equals("present")){
+					switch(symbolsList.getVerbTense()){
+						case "past": 
+							sentence.setFeature(Feature.TENSE, Tense.PAST);
+							break;
+						case "future":
+							sentence.setFeature(Feature.TENSE, Tense.FUTURE);
+							break;
+						case "present_progressive":
+							sentence.setFeature(Feature.PROGRESSIVE, true);
+							break;
+						case "past_progressive": 
+							sentence.setFeature(Feature.PROGRESSIVE, true);
+							sentence.setFeature(Feature.TENSE, Tense.PAST);
+							break;
+						case "future_progressive":
+							sentence.setFeature(Feature.PROGRESSIVE, true);
+							sentence.setFeature(Feature.TENSE, Tense.FUTURE);
+							break;
+					}
+				}
+				
+				String realizedSentence = realiser.realiseSentence(sentence);
+				//response.header("Access-Control-Allow-Origin", "http://localhost:4000");
+				response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
+				response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
+				response.header("Access-Control-Allow-Headers", "Content-Type");
+				response.header("Access-Control-Allow-Headers", "negateSentence");
+				response.status(200);
+				response.type("application/json");
+				
+				//Response.SC_ACCEPTED;
+				System.out.println(realizedSentence);
+				return gson.toJson(realizedSentence);	
+			} 
+
 			System.out.println(request.attributes());
 			System.out.println(request.body());
 			response.body("Hello");
