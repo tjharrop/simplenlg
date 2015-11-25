@@ -11,57 +11,101 @@ import simplenlg.features.*;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+//@Data
+class NewSimpleNLGSentencePayload {
+	private String subject; 
+	private String verb; 
+	private String object; 
+	private String typeSentence; 
+	private String verbTense;
+	private String isProgressive;
+	private String isModel;
+	private String isParticiple;
+	private String isPerfect;
+	private String isPassive;
+	
+//	public NewSimpleNLGSentencePayload(String sub, String verb, String obj, String typeSentence,
+//				String verbTense, String isProgressive, String isModel, String isParticiple, 
+//				String isPerfect, String isPassive){
+//		subject = sub;
+//		this.verb = verb;
+//		object = obj;
+//		this.typeSentence = typeSentence;
+//		this.verbTense = verbTense; 
+//		this.isProgressive = isProgressive.equals("True");
+//		this.isModel = isModel.equals("True"); 
+//		this.isParticiple = isParticiple.equals("True");
+//		this.isPerfect = isPerfect.equals("True");
+//		this.isPassive = isPassive.equals("True");
+//	}
+	
+	//for now
+	public boolean isValid(){
+		return subject != null;
+	}
+	
+	public boolean isValidSubVerbObj(){
+		return subject != null && object != null && typeSentence != null; 
+	}
+	
+	public String getSubject(){
+		return subject; 
+	}
+	
+	public String getVerb(){
+		return verb;
+	}
+	
+	public String getObject(){
+		return object;
+	}
+	
+	public String getTypeSentence(){
+		return typeSentence;
+	}
+	
+	public String getVerbTense(){
+		return verbTense;
+	}
+	
+	public boolean isVerbProgressive() {
+		return isProgressive.equals("True");
+	}
+	
+	public boolean isVerbModal() {
+		return isModel.equals("True");
+	}
+	
+	public boolean isVerbParticiple() {
+		return isParticiple.equals("True");
+	}
+	
+	public boolean isVerbPassive() {
+		return isPassive.equals("True");
+	}
+	
+	public boolean isVerbPerfect() {
+		return isPerfect.equals("True");
+	}
+}
+
+//interrogative
+class QuestionSentence extends NewSimpleNLGSentencePayload{
+	private String typeQuestion; 
+	
+	public String getTypeQuestion(){
+		return typeQuestion;
+	} 
+}
+
 public class Main {
 	
-	//@Data
-	static class NewSimpleNLGSentencePayload {
-		private String subject; 
-		private String verb; 
-		private String object; 
-		private String typeSentence; 
-		private String verbTense;
-		//for now
-		public boolean isValid(){
-			return subject != null;
-		}
-		
-		public boolean isValidSubVerbObj(){
-			return subject != null && object != null && typeSentence != null; 
-		}
-		
-		public String getSubject(){
-			return subject; 
-		}
-		
-		public String getVerb(){
-			return verb;
-		}
-		
-		public String getObject(){
-			return object;
-		}
-		
-		public String getTypeSentence(){
-			return typeSentence;
-		}
-		
-		public String getVerbTense(){
-			return verbTense;
-		}
-	}
-	
-	//interrogative
-	static class QuestionSentence extends NewSimpleNLGSentencePayload{
-		private String typeQuestion; 
-		
-		public String getTypeQuestion(){
-			return typeQuestion;
-		} 
-	}
+
 	
 	//static class ModifierSentence
 
@@ -77,7 +121,7 @@ public class Main {
 			if(request.host().equals("http://localhost:4000")){
 				response.header("Access-Control-Allow-Origin", "http://localhost:4000");
 			}
-			response.header("Allow-Control-Allow-Origin", "http://macmania.github.io");
+			response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
 			response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
 			response.header("Access-Control-Allow-Headers", "Content-Type");
 			response.header("Access-Control-Allow-Headers", "negateSentence");
@@ -85,7 +129,7 @@ public class Main {
 			return "hello";
 		});
 		options("/generate-question", (request, response)->{
-			response.header("Allow-Control-Allow-Origin", "http://macmania.github.io");
+			response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
 			response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
 			response.header("Access-Control-Allow-Headers", "Content-Type");
 			return "";
@@ -166,10 +210,12 @@ public class Main {
 			Realiser realiser = new Realiser(lexicon);
 			System.out.println(request.body());
 			
-			ObjectMapper mapper = new ObjectMapper(); 
+
 			Gson jsonToJava = new GsonBuilder().create();
 			
 			NewSimpleNLGSentencePayload symbolsList = jsonToJava.fromJson(request.body(), NewSimpleNLGSentencePayload.class);
+
+
 			System.out.println(symbolsList.getObject());
 			System.out.println(request.body());
 			
@@ -179,7 +225,6 @@ public class Main {
 				return "";
 			}
 			if(symbolsList.getTypeSentence().equals("SubjectVerbObject") && symbolsList.isValidSubVerbObj()) {
-				
 				SPhraseSpec sentence = nlgFactory.createClause();
 				sentence.setSubject(symbolsList.getSubject());
 				sentence.setVerb(symbolsList.getVerb());
@@ -195,18 +240,23 @@ public class Main {
 						case "future":
 							sentence.setFeature(Feature.TENSE, Tense.FUTURE);
 							break;
-						case "present_progressive":
-							sentence.setFeature(Feature.PROGRESSIVE, true);
-							break;
-						case "past_progressive": 
-							sentence.setFeature(Feature.PROGRESSIVE, true);
-							sentence.setFeature(Feature.TENSE, Tense.PAST);
-							break;
-						case "future_progressive":
-							sentence.setFeature(Feature.PROGRESSIVE, true);
-							sentence.setFeature(Feature.TENSE, Tense.FUTURE);
-							break;
 					}
+				}
+				
+				if(symbolsList.isVerbModal()){
+					sentence.setFeature(Feature.MODAL, true);
+				}
+//					if(symbolsList.isVerbParticiple()){
+//						sentence.setFeature(Feature.P;
+//					}
+				if(symbolsList.isVerbPassive()){
+					sentence.setFeature(Feature.PASSIVE, true);
+				}
+				if(symbolsList.isVerbPassive()){
+					sentence.setFeature(Feature.PASSIVE, true);
+				}
+				if(symbolsList.isVerbPerfect()){
+					sentence.setFeature(Feature.PERFECT, true);
 				}
 				
 				String realizedSentence = realiser.realiseSentence(sentence);
