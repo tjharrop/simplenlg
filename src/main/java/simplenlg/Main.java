@@ -11,57 +11,110 @@ import simplenlg.features.*;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+//@Data
+class NewSimpleNLGSentencePayload {
+	private String subject; 
+	private String verb; 
+	private String object; 
+	private String typeSentence; 
+	private String verbTense;
+	private boolean isProgressive;
+	private boolean isModel;
+	private boolean isParticiple;
+	private boolean isPerfect;
+	private boolean isPassive;
+	
+	public NewSimpleNLGSentencePayload(String sub, String verb, String obj, String typeSentence,
+				String verbTense, String isProgressive, String isModel, String isParticiple, 
+				String isPerfect, String isPassive){
+		subject = sub;
+		this.verb = verb;
+		object = obj;
+		this.typeSentence = typeSentence;
+		this.verbTense = verbTense; 
+		this.isProgressive = isProgressive.equals("True");
+		this.isModel = isModel.equals("True"); 
+		this.isParticiple = isParticiple.equals("True");
+		this.isPerfect = isPerfect.equals("True");
+		this.isPassive = isPassive.equals("True");
+	}
+	
+	//for now
+	public boolean isValid(){
+		return subject != null;
+	}
+	
+	public boolean isValidSubVerbObj(){
+		return subject != null && object != null && typeSentence != null; 
+	}
+	
+	public String getSubject(){
+		return subject; 
+	}
+	
+	public String getVerb(){
+		return verb;
+	}
+	
+	public String getObject(){
+		return object;
+	}
+	
+	public String getTypeSentence(){
+		return typeSentence;
+	}
+	
+	public String getVerbTense(){
+		return verbTense;
+	}
+	
+	public boolean isVerbProgressive() {
+		return isProgressive;
+	}
+	
+	public boolean isVerbModal() {
+		return isModel;
+	}
+	
+	public boolean isVerbParticiple() {
+		return isParticiple;
+	}
+	
+	public boolean isVerbPassive() {
+		return isPassive;
+	}
+	
+	public boolean isVerbPerfect() {
+		return isPerfect;
+	}
+}
+
+//interrogative
+class QuestionSentence extends NewSimpleNLGSentencePayload{
+	private String typeQuestion; 
+	
+	public QuestionSentence(String sub, String verb, String obj,
+			String typeSentence, String verbTense, String isProgressive,
+			String isModel, String isParticiple, String isPerfect,
+			String isPassive, String typeQuestion) {
+		super(sub, verb, obj, typeSentence, verbTense, isProgressive, isModel,
+				isParticiple, isPerfect, isPassive);	
+		this.typeQuestion = typeQuestion;
+	}
+	
+	public String getTypeQuestion(){
+		return typeQuestion;
+	} 
+}
+
 public class Main {
 	
-	//@Data
-	static class NewSimpleNLGSentencePayload {
-		private String subject; 
-		private String verb; 
-		private String object; 
-		private String typeSentence; 
-		private String verbTense;
-		//for now
-		public boolean isValid(){
-			return subject != null;
-		}
-		
-		public boolean isValidSubVerbObj(){
-			return subject != null && object != null && typeSentence != null; 
-		}
-		
-		public String getSubject(){
-			return subject; 
-		}
-		
-		public String getVerb(){
-			return verb;
-		}
-		
-		public String getObject(){
-			return object;
-		}
-		
-		public String getTypeSentence(){
-			return typeSentence;
-		}
-		
-		public String getVerbTense(){
-			return verbTense;
-		}
-	}
-	
-	//interrogative
-	static class QuestionSentence extends NewSimpleNLGSentencePayload{
-		private String typeQuestion; 
-		
-		public String getTypeQuestion(){
-			return typeQuestion;
-		} 
-	}
+
 	
 	//static class ModifierSentence
 
@@ -77,7 +130,7 @@ public class Main {
 			if(request.host().equals("http://localhost:4000")){
 				response.header("Access-Control-Allow-Origin", "http://localhost:4000");
 			}
-			response.header("Allow-Control-Allow-Origin", "http://macmania.github.io");
+			response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
 			response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
 			response.header("Access-Control-Allow-Headers", "Content-Type");
 			response.header("Access-Control-Allow-Headers", "negateSentence");
@@ -85,7 +138,7 @@ public class Main {
 			return "hello";
 		});
 		options("/generate-question", (request, response)->{
-			response.header("Allow-Control-Allow-Origin", "http://macmania.github.io");
+			response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
 			response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
 			response.header("Access-Control-Allow-Headers", "Content-Type");
 			return "";
@@ -165,71 +218,71 @@ public class Main {
 			NLGFactory nlgFactory = new NLGFactory(lexicon);
 			Realiser realiser = new Realiser(lexicon);
 			System.out.println(request.body());
-			try {
-				ObjectMapper mapper = new ObjectMapper(); 
-				
-				NewSimpleNLGSentencePayload symbolsList = mapper.readValue(request.body(), NewSimpleNLGSentencePayload.class);
+			
+			JSONObject json = (JSONObject)new JSONParser().parse(request.body());
+			
+			NewSimpleNLGSentencePayload symbolsList = new NewSimpleNLGSentencePayload(
+					(String)json.get("subject"), (String)json.get("verb"), (String)json.get("object"), 
+					(String)json.get("typeSentence"), (String)json.get("verbTense"), (String)json.get("isProgressive"), 
+					(String)json.get("isModel"), (String)json.get("isParticiple"), (String)json.get("isPerfect"),
+					(String)json.get("isPassive")
+			);
+			System.out.println(symbolsList.getObject());
+			System.out.println(request.body());
+			
+			if (!symbolsList.isValid()){
 				System.out.println(symbolsList.getObject());
-				System.out.println(request.body());
-				
-				if (!symbolsList.isValid()){
-					System.out.println(symbolsList.getObject());
-					response.status(HTTP_BAD_REQUEST);
-					return "";
-				}
-				if(symbolsList.getTypeSentence().equals("SubjectVerbObject") && symbolsList.isValidSubVerbObj()) {
-					
-					SPhraseSpec sentence = nlgFactory.createClause();
-					sentence.setSubject(symbolsList.getSubject());
-					sentence.setVerb(symbolsList.getVerb());
-					sentence.setObject(symbolsList.getObject());
-					if(request.headers().contains("negateSentence") &&  request.headers("negateSentence").equals("True")){
-						sentence.setFeature(Feature.NEGATED, true);
-					}
-					if(!symbolsList.getVerbTense().equals("present")){
-						switch(symbolsList.getVerbTense()){
-							case "past": 
-								sentence.setFeature(Feature.TENSE, Tense.PAST);
-								break;
-							case "future":
-								sentence.setFeature(Feature.TENSE, Tense.FUTURE);
-								break;
-							case "present_progressive":
-								sentence.setFeature(Feature.PROGRESSIVE, true);
-								break;
-							case "past_progressive": 
-								sentence.setFeature(Feature.PROGRESSIVE, true);
-								sentence.setFeature(Feature.TENSE, Tense.PAST);
-								break;
-							case "future_progressive":
-								sentence.setFeature(Feature.PROGRESSIVE, true);
-								sentence.setFeature(Feature.TENSE, Tense.FUTURE);
-								break;
-						}
-					}
-					
-					String realizedSentence = realiser.realiseSentence(sentence);
-					//response.header("Access-Control-Allow-Origin", "http://localhost:4000");
-					response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
-					response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
-					response.header("Access-Control-Allow-Headers", "Content-Type");
-					response.header("Access-Control-Allow-Headers", "negateSentence");
-					response.status(200);
-					response.type("application/json");
-					
-					//Response.SC_ACCEPTED;
-					System.out.println(realizedSentence);
-					return gson.toJson(realizedSentence);	
-				} 
-				
-			} catch(JsonParseException jpe){
 				response.status(HTTP_BAD_REQUEST);
 				return "";
 			}
+			if(symbolsList.getTypeSentence().equals("SubjectVerbObject") && symbolsList.isValidSubVerbObj()) {
+				SPhraseSpec sentence = nlgFactory.createClause();
+				sentence.setSubject(symbolsList.getSubject());
+				sentence.setVerb(symbolsList.getVerb());
+				sentence.setObject(symbolsList.getObject());
+				if(request.headers().contains("negateSentence") &&  request.headers("negateSentence").equals("True")){
+					sentence.setFeature(Feature.NEGATED, true);
+				}
+				if(!symbolsList.getVerbTense().equals("present")){
+					switch(symbolsList.getVerbTense()){
+						case "past": 
+							sentence.setFeature(Feature.TENSE, Tense.PAST);
+							break;
+						case "future":
+							sentence.setFeature(Feature.TENSE, Tense.FUTURE);
+							break;
+					}
+				}
+				
+				if(symbolsList.isVerbModal()){
+					sentence.setFeature(Feature.MODAL, true);
+				}
+//					if(symbolsList.isVerbParticiple()){
+//						sentence.setFeature(Feature.P;
+//					}
+				if(symbolsList.isVerbPassive()){
+					sentence.setFeature(Feature.PASSIVE, true);
+				}
+				if(symbolsList.isVerbPassive()){
+					sentence.setFeature(Feature.PASSIVE, true);
+				}
+				if(symbolsList.isVerbPerfect()){
+					sentence.setFeature(Feature.PERFECT, true);
+				}
+				
+				String realizedSentence = realiser.realiseSentence(sentence);
+				//response.header("Access-Control-Allow-Origin", "http://localhost:4000");
+				response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
+				response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
+				response.header("Access-Control-Allow-Headers", "Content-Type");
+				response.header("Access-Control-Allow-Headers", "negateSentence");
+				response.status(200);
+				response.type("application/json");
+				
+				System.out.println(realizedSentence);
+				return gson.toJson(realizedSentence);	
 			
-			System.out.println(request.attributes());
-			System.out.println(request.body());
-			response.body("Hello");
+			}
 			return "";
 		});
 	}
