@@ -259,8 +259,8 @@ public class Main {
 				if(symbolsList.isVerbPassive()){
 					sentence.setFeature(Feature.PASSIVE, true);
 				}
-				if(symbolsList.isVerbPassive()){
-					sentence.setFeature(Feature.PASSIVE, true);
+				if(symbolsList.isVerbProgressive()){
+					sentence.setFeature(Feature.PROGRESSIVE, true);
 				}
 				if(symbolsList.isVerbPerfect()){
 					sentence.setFeature(Feature.PERFECT, true);
