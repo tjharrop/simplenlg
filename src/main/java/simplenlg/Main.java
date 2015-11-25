@@ -1,6 +1,8 @@
 package simplenlg;
 import static spark.Spark.*;
 
+import java.util.Arrays;
+
 import org.eclipse.jetty.server.Response;
 
 import simplenlg.framework.*;
@@ -11,10 +13,13 @@ import simplenlg.features.*;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
 import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 //import 
 //@Data
@@ -218,6 +223,8 @@ public class Main {
 			if(symbolsList.getTypeSentence().equals("SubjectVerbObject") && symbolsList.isValidSubVerbObj()) {
 				SPhraseSpec sentence = nlgFactory.createClause();
 				sentence.setSubject(symbolsList.getSubject());
+				
+				
 				sentence.setVerb(symbolsList.getVerb());
 				sentence.setObject(symbolsList.getObject());
 				if(request.headers().contains("negateSentence") &&  request.headers("negateSentence").equals("True")){
@@ -246,8 +253,8 @@ public class Main {
 				if(symbolsList.isVerbPassive()){
 					sentence.setFeature(Feature.PASSIVE, true);
 				}
-				if(symbolsList.isVerbPassive()){
-					sentence.setFeature(Feature.PASSIVE, true);
+				if(symbolsList.isVerbProgressive()){
+					sentence.setFeature(Feature.POSSESSIVE, true);
 				}
 				if(symbolsList.isVerbPerfect()){
 					sentence.setFeature(Feature.PERFECT, true);
@@ -291,7 +298,22 @@ public class Main {
 		return 4567;
 	}
 	
-	static void useStanfordTagger() {
-		
+	static boolean isNounPhrase(String phrase) {
+		MaxentTagger tagger = new MaxentTagger("/english-left3words-distsim.tagger");
+		String tagged = tagger.tagString(phrase);
+		String delim = "/";
+		String []tokens = tagged.split(delim);
+		boolean isNounPhrase = Arrays.asList(tokens).contains("NP");
+		return isNounPhrase;
 	}
+	
+	static boolean isVerbPhrase(String phrase){
+		MaxentTagger tagger = new MaxentTagger("/english-left3words-distsim.tagger");
+		String tagged = tagger.tagString(phrase);
+		String delim = "/";
+		String []tokens = tagged.split(delim);
+		boolean isVerbPhrase = Arrays.asList(tokens).contains("VP");
+		return isVerbPhrase;
+	}
+	
 }
