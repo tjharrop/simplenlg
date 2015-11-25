@@ -15,7 +15,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
+import edu.stanford.nlp.tagger.maxent.MaxentTagger;
+//import 
 //@Data
 class NewSimpleNLGSentencePayload {
 	private String subject; 
@@ -29,20 +30,6 @@ class NewSimpleNLGSentencePayload {
 	private String isPerfect;
 	private String isPassive;
 	private String negateSentence;
-//	public NewSimpleNLGSentencePayload(String sub, String verb, String obj, String typeSentence,
-//				String verbTense, String isProgressive, String isModel, String isParticiple, 
-//				String isPerfect, String isPassive){
-//		subject = sub;
-//		this.verb = verb;
-//		object = obj;
-//		this.typeSentence = typeSentence;
-//		this.verbTense = verbTense; 
-//		this.isProgressive = isProgressive.equals("True");
-//		this.isModel = isModel.equals("True"); 
-//		this.isParticiple = isParticiple.equals("True");
-//		this.isPerfect = isPerfect.equals("True");
-//		this.isPassive = isPassive.equals("True");
-//	}
 	
 	//for now
 	public boolean isValid(){
@@ -302,5 +289,9 @@ public class Main {
 			return Integer.parseInt(processBuilder.environment().get("PORT"));
 		}
 		return 4567;
+	}
+	
+	static void useStanfordTagger() {
+		
 	}
 }
