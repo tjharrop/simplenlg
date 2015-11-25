@@ -28,7 +28,7 @@ class NewSimpleNLGSentencePayload {
 	private String isParticiple;
 	private String isPerfect;
 	private String isPassive;
-	
+	private String negateSentence;
 //	public NewSimpleNLGSentencePayload(String sub, String verb, String obj, String typeSentence,
 //				String verbTense, String isProgressive, String isModel, String isParticiple, 
 //				String isPerfect, String isPassive){
@@ -91,6 +91,10 @@ class NewSimpleNLGSentencePayload {
 	
 	public boolean isVerbPerfect() {
 		return isPerfect.equals("True");
+	}
+	
+	public boolean negateSentence(){
+		return this.negateSentence.equals("True");
 	}
 }
 
@@ -243,6 +247,9 @@ public class Main {
 					}
 				}
 				
+				if(symbolsList.negateSentence()){
+					sentence.setFeature(Feature.NEGATED, true);
+				}
 				if(symbolsList.isVerbModal()){
 					sentence.setFeature(Feature.MODAL, true);
 				}
