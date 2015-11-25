@@ -1,5 +1,8 @@
 package simplenlg;
 import static spark.Spark.*;
+
+import org.eclipse.jetty.server.Response;
+
 import simplenlg.framework.*;
 import simplenlg.lexicon.*;
 import simplenlg.realiser.english.*;
@@ -15,7 +18,7 @@ import com.google.gson.GsonBuilder;
 public class Main {
 	
 	//@Data
-	static class NewSentencePayload {
+	static class NewSimpleNLGSentencePayload {
 		private String subject; 
 		private String verb; 
 		private String object; 
@@ -50,13 +53,113 @@ public class Main {
 			return verbTense;
 		}
 	}
+	
+	//interrogative
+	static class QuestionSentence extends NewSimpleNLGSentencePayload{
+		private String typeQuestion; 
+		
+		public String getTypeQuestion(){
+			return typeQuestion;
+		} 
+	}
+	
+	//static class ModifierSentence
 
 	private static final int HTTP_BAD_REQUEST = 400;
 	public static void main(String[] args){
+		
+		String origin = "http://localhost:4000";
+		
 		port(getHerokuAssignedPort());
 		get("/hello", (request, response) -> "Hello World");
 		
-		post("/generate-sentence", (request, response) -> {
+		options("/generate-sentence", (request, response)->{
+			if(request.host().equals("http://localhost:4000")){
+				response.header("Access-Control-Allow-Origin", "http://localhost:4000");
+			}
+			response.header("Allow-Control-Allow-Origin", "http://macmania.github.io");
+			response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
+			response.header("Access-Control-Allow-Headers", "Content-Type");
+			response.header("Access-Control-Allow-Headers", "negateSentence");
+			System.out.println(request.body());
+			return "hello";
+		});
+		options("/generate-question", (request, response)->{
+			response.header("Allow-Control-Allow-Origin", "http://macmania.github.io");
+			response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
+			response.header("Access-Control-Allow-Headers", "Content-Type");
+			return "";
+		});
+		
+		post("/generate-question", (request, response) ->{
+			Gson gson = new Gson(); 
+			Lexicon lexicon = Lexicon.getDefaultLexicon(); 
+			NLGFactory nlgFactory = new NLGFactory(lexicon); 
+			Realiser realiser = new Realiser(lexicon); 
+			
+			try {
+				ObjectMapper mapper = new ObjectMapper(); 
+				
+				QuestionSentence questionList = mapper.readValue(request.body(), QuestionSentence.class);
+				
+				SPhraseSpec question = nlgFactory.createClause();
+				question.setSubject(questionList.getSubject());
+				question.setVerb(questionList.getVerb());
+				question.setObject(questionList.getObject());
+				
+				switch (questionList.getTypeQuestion()){
+					case "what_sub":
+						question.setFeature(Feature.INTERROGATIVE_TYPE, InterrogativeType.WHAT_SUBJECT);
+						break;
+					case "what_obj":
+						question.setFeature(Feature.INTERROGATIVE_TYPE, InterrogativeType.WHAT_OBJECT);
+						break;
+					case "how":
+						question.setFeature(Feature.INTERROGATIVE_TYPE, InterrogativeType.HOW);
+						break;
+					case "how_pred":
+						question.setFeature(Feature.INTERROGATIVE_TYPE, InterrogativeType.HOW_PREDICATE);
+						break;
+					case "where":
+						question.setFeature(Feature.INTERROGATIVE_TYPE, InterrogativeType.WHERE);
+						break;
+					case "who_indirect":
+						question.setFeature(Feature.INTERROGATIVE_TYPE, InterrogativeType.WHO_INDIRECT_OBJECT);
+						break;
+					case "who_obj":
+						question.setFeature(Feature.INTERROGATIVE_TYPE, InterrogativeType.WHO_OBJECT);
+						break;
+					case "who_sub":
+						question.setFeature(Feature.INTERROGATIVE_TYPE, InterrogativeType.WHO_SUBJECT);
+						break;
+					case "why":
+						question.setFeature(Feature.INTERROGATIVE_TYPE, InterrogativeType.WHY);
+						break;
+					case "yes_no":
+						question.setFeature(Feature.INTERROGATIVE_TYPE, InterrogativeType.YES_NO);
+						break;
+					case "how_many":
+						question.setFeature(Feature.INTERROGATIVE_TYPE, InterrogativeType.HOW_MANY);
+						break;
+				}
+				String realizedQuestion = realiser.realiseSentence(question);
+				//response.header("Access-Control-Allow-Origin", "http://localhost:4000");
+				response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
+				response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
+				response.header("Access-Control-Allow-Headers", "Content-Type");
+				response.header("Access-Control-Allow-Headers", "negateSentence");
+				response.status(200);
+				response.type("application/json");
+				
+				System.out.println(realizedQuestion);
+				return gson.toJson(realizedQuestion);
+			} catch(JsonParseException jpe){
+				response.status(HTTP_BAD_REQUEST);
+				return "";
+			}
+		});
+		
+		post("/generate-sentence", (request, response) -> {			
 			Gson gson = new Gson();
 			Lexicon lexicon = Lexicon.getDefaultLexicon();
 			NLGFactory nlgFactory = new NLGFactory(lexicon);
@@ -64,7 +167,8 @@ public class Main {
 			System.out.println(request.body());
 			try {
 				ObjectMapper mapper = new ObjectMapper(); 
-				NewSentencePayload symbolsList = mapper.readValue(request.body(), NewSentencePayload.class);
+				
+				NewSimpleNLGSentencePayload symbolsList = mapper.readValue(request.body(), NewSimpleNLGSentencePayload.class);
 				System.out.println(symbolsList.getObject());
 				System.out.println(request.body());
 				
@@ -73,12 +177,15 @@ public class Main {
 					response.status(HTTP_BAD_REQUEST);
 					return "";
 				}
-				if(symbolsList.getTypeSentence().equals("SubjectVerbObject") && symbolsList.isValidSubVerbObj()){
+				if(symbolsList.getTypeSentence().equals("SubjectVerbObject") && symbolsList.isValidSubVerbObj()) {
+					
 					SPhraseSpec sentence = nlgFactory.createClause();
 					sentence.setSubject(symbolsList.getSubject());
 					sentence.setVerb(symbolsList.getVerb());
 					sentence.setObject(symbolsList.getObject());
-					
+					if(request.headers().contains("negateSentence") &&  request.headers("negateSentence").equals("True")){
+						sentence.setFeature(Feature.NEGATED, true);
+					}
 					if(!symbolsList.getVerbTense().equals("present")){
 						switch(symbolsList.getVerbTense()){
 							case "past": 
@@ -102,17 +209,18 @@ public class Main {
 					}
 					
 					String realizedSentence = realiser.realiseSentence(sentence);
-					
+					//response.header("Access-Control-Allow-Origin", "http://localhost:4000");
+					response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
+					response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
+					response.header("Access-Control-Allow-Headers", "Content-Type");
+					response.header("Access-Control-Allow-Headers", "negateSentence");
 					response.status(200);
 					response.type("application/json");
+					
+					//Response.SC_ACCEPTED;
 					System.out.println(realizedSentence);
-					return gson.toJson(realizedSentence);
-					
-				} else if (symbolsList.getTypeSentence().equals("")) {
-					
-				}
-				
-				
+					return gson.toJson(realizedSentence);	
+				} 
 				
 			} catch(JsonParseException jpe){
 				response.status(HTTP_BAD_REQUEST);
@@ -124,6 +232,15 @@ public class Main {
 			response.body("Hello");
 			return "";
 		});
+	}
+	static String getOrigin(){
+		ProcessBuilder processBuilder = new ProcessBuilder();
+		if (processBuilder.environment().get("PORT") != null) {
+			return "http://macmania.github.io"; 
+		}
+		else {
+			return "http://localhost:4000";
+		}
 	}
 	
 	static int getHerokuAssignedPort() {
