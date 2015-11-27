@@ -210,7 +210,7 @@ public class Main {
 				}
 				String realizedQuestion = realiser.realiseSentence(question);
 				//response.header("Access-Control-Allow-Origin", "http://localhost:4000");
-				response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
+				response.header("Access-Control-Allow-Origin", "https://macmania.github.io");
 				response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
 				response.header("Access-Control-Allow-Headers", "Content-Type");
 				response.header("Access-Control-Allow-Headers", "negateSentence");
@@ -247,14 +247,14 @@ public class Main {
 			}
 			if(symbolsList.getTypeSentence().equals("SubjectVerbObject") && symbolsList.isValidSubVerbObj()) {
 				SPhraseSpec sentence = nlgFactory.createClause();
-				
+				boolean isVerbP = false;
 				if(isNounPhrase(symbolsList.getSubject())){
 					sentence.setSubject(nlgFactory.createNounPhrase(symbolsList.getSubject()));
 				} else {
 					sentence.setSubject(symbolsList.getSubject());
 				}
 				
-				if(isVerbPhrase(symbolsList.getVerb())){
+				if((isVerbP=isVerbPhrase(symbolsList.getVerb()))){
 					sentence.setVerbPhrase(nlgFactory.createVerbPhrase(symbolsList.getVerb()));
 				} else {
 					sentence.setVerb(symbolsList.getVerb());
@@ -285,9 +285,10 @@ public class Main {
 				if(symbolsList.isVerbModal()){
 					sentence.setFeature(Feature.MODAL, true);
 				}
-//					if(symbolsList.isVerbParticiple()){
-//						sentence.setFeature(Feature.P;
-//					}
+				
+				if(isVerbP && symbolsList.isVerbParticiple()){
+					sentence.setFeature(Feature.PARTICLE, true);
+				}
 				if(symbolsList.isVerbPassive()){
 					sentence.setFeature(Feature.PASSIVE, true);
 				}
@@ -300,14 +301,13 @@ public class Main {
 				
 				String realizedSentence = realiser.realiseSentence(sentence);
 				//response.header("Access-Control-Allow-Origin", "http://localhost:4000");
-				response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
+				response.header("Access-Control-Allow-Origin", "https://macmania.github.io");
 				response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
 				response.header("Access-Control-Allow-Headers", "Content-Type");
 				response.header("Access-Control-Allow-Headers", "negateSentence");
 				response.status(200);
 				response.type("application/json");
 				
-				//Response.SC_ACCEPTED;
 				System.out.println(realizedSentence);
 				return gson.toJson(realizedSentence);	
 			} 
@@ -360,11 +360,7 @@ public class Main {
 			}
 			if(listTaggers.get(i).equals("NP"))
 				isNounPhrase = true;
-			//System.out.println(pos);
 		}
-		
-		//String []tokens = tagged.split(delim);
-		//isNounPhrase = Arrays.asList(tokens).contains("NP");
 		System.out.println("is noun phrase? " + isNounPhrase);
 		System.out.println("tagged word " + tagged);
 		System.out.println(phrase);
@@ -386,14 +382,9 @@ public class Main {
 			}
 		}
 		
-		//this.getClass().getClassLoader().getResource
-		//MaxentTagger tagger = new MaxentTagger("models/english-left3words-distsim.tagger");
-		//MaxentTagger tagger = new MaxentTagger(Main.class.getClassLoader().getResource("/english-left3words-distsim.tagger").getFile());
-		//String tagged = tagger.tagString(phrase);
 		String delim = "/";
-		//String originalTagged = 
+ 
 		String []tokens = tagged.split(delim);
-		//System.out.println(tagged)
 		boolean isVerbPhrase = Arrays.asList(tokens).contains("VP");
 		System.out.println("is verb phrase? " + isVerbPhrase);
 		System.out.println("tagged word: " + tagged);
