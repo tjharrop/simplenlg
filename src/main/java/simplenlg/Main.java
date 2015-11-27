@@ -1,6 +1,11 @@
 package simplenlg;
 import static spark.Spark.*;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Properties;
+import java.util.List;
+
 import org.eclipse.jetty.server.Response;
 
 import simplenlg.framework.*;
@@ -11,11 +16,20 @@ import simplenlg.features.*;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import edu.stanford.nlp.tagger.maxent.MaxentTagger;
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.pipeline.Annotation;
+import edu.stanford.nlp.util.CoreMap;
+import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.ling.CoreAnnotations;
+//import 
 //@Data
 class NewSimpleNLGSentencePayload {
 	private String subject; 
@@ -29,20 +43,6 @@ class NewSimpleNLGSentencePayload {
 	private String isPerfect;
 	private String isPassive;
 	private String negateSentence;
-//	public NewSimpleNLGSentencePayload(String sub, String verb, String obj, String typeSentence,
-//				String verbTense, String isProgressive, String isModel, String isParticiple, 
-//				String isPerfect, String isPassive){
-//		subject = sub;
-//		this.verb = verb;
-//		object = obj;
-//		this.typeSentence = typeSentence;
-//		this.verbTense = verbTense; 
-//		this.isProgressive = isProgressive.equals("True");
-//		this.isModel = isModel.equals("True"); 
-//		this.isParticiple = isParticiple.equals("True");
-//		this.isPerfect = isPerfect.equals("True");
-//		this.isPassive = isPassive.equals("True");
-//	}
 	
 	//for now
 	public boolean isValid(){
@@ -151,9 +151,27 @@ public class Main {
 				QuestionSentence questionList = mapper.readValue(request.body(), QuestionSentence.class);
 				
 				SPhraseSpec question = nlgFactory.createClause();
-				question.setSubject(questionList.getSubject());
-				question.setVerb(questionList.getVerb());
-				question.setObject(questionList.getObject());
+				
+				if(isNounPhrase(questionList.getSubject())){
+					question.setSubject(nlgFactory.createNounPhrase(questionList.getSubject()));
+				} else {
+					question.setSubject(questionList.getSubject());
+				}
+				
+				if(isVerbPhrase(questionList.getVerb())){
+					question.setVerbPhrase(nlgFactory.createVerbPhrase(questionList.getVerb()));
+					//question.setVerbPhrase(questionList.getVerb());
+				} else {
+					question.setVerb(questionList.getVerb());
+				}
+				
+				if(isNounPhrase(questionList.getObject())){
+					question.setObject(nlgFactory.createNounPhrase(questionList.getObject()));
+					//question.setObject(questionList.getObject());
+				} else {
+					question.setObject(questionList.getObject());
+				}
+				
 				
 				switch (questionList.getTypeQuestion()){
 					case "what_sub":
@@ -192,7 +210,7 @@ public class Main {
 				}
 				String realizedQuestion = realiser.realiseSentence(question);
 				//response.header("Access-Control-Allow-Origin", "http://localhost:4000");
-				response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
+				response.header("Access-Control-Allow-Origin", "https://macmania.github.io");
 				response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
 				response.header("Access-Control-Allow-Headers", "Content-Type");
 				response.header("Access-Control-Allow-Headers", "negateSentence");
@@ -214,7 +232,6 @@ public class Main {
 			Realiser realiser = new Realiser(lexicon);
 			System.out.println(request.body());
 			
-
 			Gson jsonToJava = new GsonBuilder().create();
 			
 			NewSimpleNLGSentencePayload symbolsList = jsonToJava.fromJson(request.body(), NewSimpleNLGSentencePayload.class);
@@ -230,9 +247,24 @@ public class Main {
 			}
 			if(symbolsList.getTypeSentence().equals("SubjectVerbObject") && symbolsList.isValidSubVerbObj()) {
 				SPhraseSpec sentence = nlgFactory.createClause();
-				sentence.setSubject(symbolsList.getSubject());
-				sentence.setVerb(symbolsList.getVerb());
-				sentence.setObject(symbolsList.getObject());
+				boolean isVerbP = false;
+				if(isNounPhrase(symbolsList.getSubject())){
+					sentence.setSubject(nlgFactory.createNounPhrase(symbolsList.getSubject()));
+				} else {
+					sentence.setSubject(symbolsList.getSubject());
+				}
+				
+				if((isVerbP=isVerbPhrase(symbolsList.getVerb()))){
+					sentence.setVerbPhrase(nlgFactory.createVerbPhrase(symbolsList.getVerb()));
+				} else {
+					sentence.setVerb(symbolsList.getVerb());
+				}
+				
+				if(isNounPhrase(symbolsList.getObject())){
+					sentence.setObject(nlgFactory.createNounPhrase(symbolsList.getObject()));
+				} else {
+					sentence.setObject(symbolsList.getObject());
+				}
 				if(request.headers().contains("negateSentence") &&  request.headers("negateSentence").equals("True")){
 					sentence.setFeature(Feature.NEGATED, true);
 				}
@@ -253,14 +285,15 @@ public class Main {
 				if(symbolsList.isVerbModal()){
 					sentence.setFeature(Feature.MODAL, true);
 				}
-//					if(symbolsList.isVerbParticiple()){
-//						sentence.setFeature(Feature.P;
-//					}
-				if(symbolsList.isVerbPassive()){
-					sentence.setFeature(Feature.PASSIVE, true);
+				
+				if(isVerbP && symbolsList.isVerbParticiple()){
+					sentence.setFeature(Feature.PARTICLE, true);
 				}
 				if(symbolsList.isVerbProgressive()){
 					sentence.setFeature(Feature.PROGRESSIVE, true);
+				}
+				if(symbolsList.isVerbProgressive()){
+					sentence.setFeature(Feature.POSSESSIVE, true);
 				}
 				if(symbolsList.isVerbPerfect()){
 					sentence.setFeature(Feature.PERFECT, true);
@@ -268,14 +301,13 @@ public class Main {
 				
 				String realizedSentence = realiser.realiseSentence(sentence);
 				//response.header("Access-Control-Allow-Origin", "http://localhost:4000");
-				response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
+				response.header("Access-Control-Allow-Origin", "https://macmania.github.io");
 				response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
 				response.header("Access-Control-Allow-Headers", "Content-Type");
 				response.header("Access-Control-Allow-Headers", "negateSentence");
 				response.status(200);
 				response.type("application/json");
 				
-				//Response.SC_ACCEPTED;
 				System.out.println(realizedSentence);
 				return gson.toJson(realizedSentence);	
 			} 
@@ -302,5 +334,60 @@ public class Main {
 			return Integer.parseInt(processBuilder.environment().get("PORT"));
 		}
 		return 4567;
+	}
+	
+	static boolean isNounPhrase(String phrase) {
+		Properties props = new Properties();
+		boolean isNounPhrase = false;
+		List<String> listTaggers = new ArrayList<String>();
+		props.setProperty("annotators", "tokenize, ssplit, pos");
+		String tagged = "";
+		StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
+		Annotation annotation = new Annotation(phrase);
+		pipeline.annotate(annotation);
+		List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
+		for (CoreMap sentence : sentences){
+			for(CoreLabel token : sentence.get(CoreAnnotations.TokensAnnotation.class)){
+				tagged = token.get(CoreAnnotations.PartOfSpeechAnnotation.class);
+				
+				listTaggers.add(tagged);
+				System.out.println(tagged);
+			}
+		}
+		for(int i = 0; i < listTaggers.size(); i++){
+			if(listTaggers.get(i).equals("NN") && i != 0 && listTaggers.get(i-1).equals("JJ")){
+				isNounPhrase = true; 
+			}
+			if(listTaggers.get(i).equals("NP"))
+				isNounPhrase = true;
+		}
+		System.out.println("is noun phrase? " + isNounPhrase);
+		System.out.println("tagged word " + tagged);
+		System.out.println(phrase);
+		return isNounPhrase;
+	}
+	
+	static boolean isVerbPhrase(String phrase){
+		Properties props = new Properties();
+		props.setProperty("annotators", "tokenize, ssplit, pos");
+		String tagged = "";
+		StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
+		Annotation annotation = new Annotation(phrase);
+		pipeline.annotate(annotation);
+		List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
+		for (CoreMap sentence : sentences){
+			for(CoreLabel token : sentence.get(CoreAnnotations.TokensAnnotation.class)){
+				tagged = token.get(CoreAnnotations.PartOfSpeechAnnotation.class);
+				System.out.println(tagged);
+			}
+		}
+		
+		String delim = "/";
+ 
+		String []tokens = tagged.split(delim);
+		boolean isVerbPhrase = Arrays.asList(tokens).contains("VP");
+		System.out.println("is verb phrase? " + isVerbPhrase);
+		System.out.println("tagged word: " + tagged);
+		return isVerbPhrase;
 	}
 }
