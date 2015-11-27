@@ -1,7 +1,10 @@
 package simplenlg;
 import static spark.Spark.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Properties;
+import java.util.List;
 
 import org.eclipse.jetty.server.Response;
 
@@ -21,6 +24,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import edu.stanford.nlp.tagger.maxent.MaxentTagger;
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.pipeline.Annotation;
+import edu.stanford.nlp.util.CoreMap;
+import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.ling.CoreAnnotations;
 //import 
 //@Data
 class NewSimpleNLGSentencePayload {
@@ -143,9 +151,27 @@ public class Main {
 				QuestionSentence questionList = mapper.readValue(request.body(), QuestionSentence.class);
 				
 				SPhraseSpec question = nlgFactory.createClause();
-				question.setSubject(questionList.getSubject());
-				question.setVerb(questionList.getVerb());
-				question.setObject(questionList.getObject());
+				
+				if(isNounPhrase(questionList.getSubject())){
+					question.setSubject(nlgFactory.createNounPhrase(questionList.getSubject()));
+				} else {
+					question.setSubject(questionList.getSubject());
+				}
+				
+				if(isVerbPhrase(questionList.getVerb())){
+					question.setVerbPhrase(nlgFactory.createVerbPhrase(questionList.getVerb()));
+					//question.setVerbPhrase(questionList.getVerb());
+				} else {
+					question.setVerb(questionList.getVerb());
+				}
+				
+				if(isNounPhrase(questionList.getObject())){
+					question.setObject(nlgFactory.createNounPhrase(questionList.getObject()));
+					//question.setObject(questionList.getObject());
+				} else {
+					question.setObject(questionList.getObject());
+				}
+				
 				
 				switch (questionList.getTypeQuestion()){
 					case "what_sub":
@@ -206,7 +232,6 @@ public class Main {
 			Realiser realiser = new Realiser(lexicon);
 			System.out.println(request.body());
 			
-
 			Gson jsonToJava = new GsonBuilder().create();
 			
 			NewSimpleNLGSentencePayload symbolsList = jsonToJava.fromJson(request.body(), NewSimpleNLGSentencePayload.class);
@@ -222,11 +247,24 @@ public class Main {
 			}
 			if(symbolsList.getTypeSentence().equals("SubjectVerbObject") && symbolsList.isValidSubVerbObj()) {
 				SPhraseSpec sentence = nlgFactory.createClause();
-				sentence.setSubject(symbolsList.getSubject());
 				
+				if(isNounPhrase(symbolsList.getSubject())){
+					sentence.setSubject(nlgFactory.createNounPhrase(symbolsList.getSubject()));
+				} else {
+					sentence.setSubject(symbolsList.getSubject());
+				}
 				
-				sentence.setVerb(symbolsList.getVerb());
-				sentence.setObject(symbolsList.getObject());
+				if(isVerbPhrase(symbolsList.getVerb())){
+					sentence.setVerbPhrase(nlgFactory.createVerbPhrase(symbolsList.getVerb()));
+				} else {
+					sentence.setVerb(symbolsList.getVerb());
+				}
+				
+				if(isNounPhrase(symbolsList.getObject())){
+					sentence.setObject(nlgFactory.createNounPhrase(symbolsList.getObject()));
+				} else {
+					sentence.setObject(symbolsList.getObject());
+				}
 				if(request.headers().contains("negateSentence") &&  request.headers("negateSentence").equals("True")){
 					sentence.setFeature(Feature.NEGATED, true);
 				}
@@ -299,21 +337,66 @@ public class Main {
 	}
 	
 	static boolean isNounPhrase(String phrase) {
-		MaxentTagger tagger = new MaxentTagger("/english-left3words-distsim.tagger");
-		String tagged = tagger.tagString(phrase);
-		String delim = "/";
-		String []tokens = tagged.split(delim);
-		boolean isNounPhrase = Arrays.asList(tokens).contains("NP");
+		Properties props = new Properties();
+		boolean isNounPhrase = false;
+		List<String> listTaggers = new ArrayList<String>();
+		props.setProperty("annotators", "tokenize, ssplit, pos");
+		String tagged = "";
+		StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
+		Annotation annotation = new Annotation(phrase);
+		pipeline.annotate(annotation);
+		List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
+		for (CoreMap sentence : sentences){
+			for(CoreLabel token : sentence.get(CoreAnnotations.TokensAnnotation.class)){
+				tagged = token.get(CoreAnnotations.PartOfSpeechAnnotation.class);
+				
+				listTaggers.add(tagged);
+				System.out.println(tagged);
+			}
+		}
+		for(int i = 0; i < listTaggers.size(); i++){
+			if(listTaggers.get(i).equals("NN") && i != 0 && listTaggers.get(i-1).equals("JJ")){
+				isNounPhrase = true; 
+			}
+			if(listTaggers.get(i).equals("NP"))
+				isNounPhrase = true;
+			//System.out.println(pos);
+		}
+		
+		//String []tokens = tagged.split(delim);
+		//isNounPhrase = Arrays.asList(tokens).contains("NP");
+		System.out.println("is noun phrase? " + isNounPhrase);
+		System.out.println("tagged word " + tagged);
+		System.out.println(phrase);
 		return isNounPhrase;
 	}
 	
 	static boolean isVerbPhrase(String phrase){
-		MaxentTagger tagger = new MaxentTagger("/english-left3words-distsim.tagger");
-		String tagged = tagger.tagString(phrase);
+		Properties props = new Properties();
+		props.setProperty("annotators", "tokenize, ssplit, pos");
+		String tagged = "";
+		StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
+		Annotation annotation = new Annotation(phrase);
+		pipeline.annotate(annotation);
+		List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
+		for (CoreMap sentence : sentences){
+			for(CoreLabel token : sentence.get(CoreAnnotations.TokensAnnotation.class)){
+				tagged = token.get(CoreAnnotations.PartOfSpeechAnnotation.class);
+				System.out.println(tagged);
+			}
+		}
+		
+		//this.getClass().getClassLoader().getResource
+		//MaxentTagger tagger = new MaxentTagger("models/english-left3words-distsim.tagger");
+		//MaxentTagger tagger = new MaxentTagger(Main.class.getClassLoader().getResource("/english-left3words-distsim.tagger").getFile());
+		//String tagged = tagger.tagString(phrase);
 		String delim = "/";
+		//String originalTagged = 
 		String []tokens = tagged.split(delim);
+		//System.out.println(tagged)
 		boolean isVerbPhrase = Arrays.asList(tokens).contains("VP");
+		System.out.println("is verb phrase? " + isVerbPhrase);
+		System.out.println("tagged word: " + tagged);
 		return isVerbPhrase;
 	}
-	
 }
