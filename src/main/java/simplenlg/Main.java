@@ -321,6 +321,10 @@ public class Main {
 	}
 	
 	static boolean isNounPhrase(String phrase) {
+		/**
+		 * Make an outside call to see if the phrase needs other things 
+		 * **/
+		
 		Properties props = new Properties();
 		boolean isNounPhrase = false;
 		List<String> listTaggers = new ArrayList<String>();
