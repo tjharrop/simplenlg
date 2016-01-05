@@ -21,13 +21,7 @@ import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.util.CoreMap;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.CoreAnnotations;
-//import 
-//@Data
-//class IsVerbPhraseProperty{
-//	public boolean isVerbPhrase;
-//	public boolean is
-//	
-//}
+
 
 class VerbIdentity{
 	boolean isVerbPhrase; 
@@ -40,9 +34,8 @@ class VerbIdentity{
 		isVerbPhrase = false; 
 		isVerbModal = false; 
 		modalVerb = new String();
-		
+		verbPhrase = new String(); 
 	}
-	
 }
 
 class NewSimpleNLGSentencePayload {
@@ -279,14 +272,17 @@ public class Main {
 				} else if(verbIdentity instanceof VerbIdentity && ((VerbIdentity)verbIdentity).isVerbModal){
 					//set up the verb modal 
 					//set up the different verb phrase for the modal 
-					sentence.setFeature(Feature.MODAL, ((VerbIdentity)verbIdentity).modalVerb); 
+					 
 					//set up the different verb phrase for the rest of the verb phrase
-					sentence.setComplement(((VerbIdentity)verbIdentity).verbPhrase);
+					//phraseFactory.createVerbPhrase("give")
+					System.out.println("verb phrase of sentence: " + verbIdentity.verbPhrase);
+					sentence.setVerbPhrase(nlgFactory.createVerbPhrase(verbIdentity.verbPhrase));
 					//set up the rest of the verb phrase
+					sentence.setFeature(Feature.MODAL, (verbIdentity.modalVerb));
 				} else {
 					sentence.setVerb(symbolsList.getVerb());
 				}
-				
+		
 				if(isNounProperty(symbolsList.getObject(), "is noun phrase")){
 					sentence.setObject(nlgFactory.createNounPhrase(symbolsList.getObject()));
 				} else {
