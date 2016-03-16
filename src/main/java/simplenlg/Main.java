@@ -127,10 +127,10 @@ public class Main {
 		get("/hello", (request, response) -> "Hello World");
 		
 		options("/generate-sentence", (request, response)->{
-			if(request.host().equals("http://localhost:4000")){
-				response.header("Access-Control-Allow-Origin", "http://localhost:4000");
+			if(request.host().equals("http://macmania.github.io")){
+				response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
 			}
-			response.header("Access-Control-Allow-Origin", "http://localhost:4000");
+			response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
 			response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
 			response.header("Access-Control-Allow-Headers", "Content-Type");
 			response.header("Access-Control-Allow-Headers", "negateSentence");
@@ -138,7 +138,7 @@ public class Main {
 			return "hello";
 		});
 		options("/generate-question", (request, response)->{
-			response.header("Access-Control-Allow-Origin", "http://localhost:4000");
+			response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
 			response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
 			response.header("Access-Control-Allow-Headers", "Content-Type");
 			return "";
@@ -219,7 +219,7 @@ public class Main {
 					break;
 			}
 			String realizedQuestion = realiser.realiseSentence(question);
-			response.header("Access-Control-Allow-Origin", "http://localhost:4000");
+			response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
 			//response.header("Access-Control-Allow-Origin", "https://macmania.github.io");
 			response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
 			response.header("Access-Control-Allow-Headers", "Content-Type");
@@ -326,7 +326,7 @@ public class Main {
 				
 				String realizedSentence = realiser.realiseSentence(sentence);
 				//response.header("Access-Control-Allow-Origin", "http://localhost:4000");
-				response.header("Access-Control-Allow-Origin", "http://localhost:4000");
+				response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
 				response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
 				response.header("Access-Control-Allow-Headers", "Content-Type");
 				response.header("Access-Control-Allow-Headers", "negateSentence");
@@ -349,7 +349,7 @@ public class Main {
 			return "http://macmania.github.io"; 
 		}
 		else {
-			return "http://localhost:4000";
+			return "http://macmania.github.io";
 		}
 	}
 	
