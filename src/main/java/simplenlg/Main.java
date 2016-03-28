@@ -126,7 +126,7 @@ public class Main {
 		port(getHerokuAssignedPort());
 		get("/hello", (request, response) -> "Hello World");
 		
-		options("/generate-sentence", (request, response)->{
+		options("/generate-sentence", (request, response) -> {
 			if(request.host().equals("http://macmania.github.io")){
 				response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
 			}
@@ -137,14 +137,29 @@ public class Main {
 			System.out.println(request.body());
 			return "hello";
 		});
-		options("/generate-question", (request, response)->{
+		options("/generate-question", (request, response) -> {
 			response.header("Access-Control-Allow-Origin", "http://macmania.github.io");
 			response.header("Access-Control-Allow-Methods", "GET, POST, PUT");
 			response.header("Access-Control-Allow-Headers", "Content-Type");
 			return "";
 		});
 		
-		post("/generate-question", (request, response) ->{
+		/**
+		 *	Parses the verb, object and subject words to see whether it makes sense to generate 
+		 *  the particular questions, this in turn determines what the user can and can't choose 
+		 **/
+		post("/get-valid-question-options", (request, response)->{
+			return "";
+		});
+		
+		/**
+		 * Determines which sentence options are most suitable, this in turn disables certain options
+		 * */
+		post("/get-valid-sentence-options", (request, response) -> { 
+			return ""; 
+		});
+		
+		post("/generate-question", (request, response) -> {
 			Gson gson = new Gson(); 
 			Lexicon lexicon = Lexicon.getDefaultLexicon(); 
 			NLGFactory nlgFactory = new NLGFactory(lexicon); 
@@ -378,14 +393,11 @@ public class Main {
 		pipeline.annotate(annotation);
 		List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
 		for (CoreMap sentence : sentences){
-			System.out.println(sentence);
 			for(CoreLabel token : sentence.get(CoreAnnotations.TokensAnnotation.class)){
 				tagged = token.get(CoreAnnotations.PartOfSpeechAnnotation.class);
 				
-				System.out.println(token.word());
 				listTokens.add(token.word());
 				listTaggers.add(tagged);
-				System.out.println(tagged);
 			}
 		}
 		for(int i = 0; i < listTaggers.size(); i++){
@@ -405,12 +417,8 @@ public class Main {
 					isNounPlural = true;
 				} 
 			}
-			
-			
 		}
-		System.out.println("is noun phrase? " + isNounPhrase);
-		System.out.println("tagged word " + tagged);
-		System.out.println(phrase);
+
 		return option.equals("is noun phrase") ? isNounPhrase : isNounPlural;
 	}
 	
@@ -432,8 +440,6 @@ public class Main {
 		for (CoreMap sentence : sentences){
 			for(CoreLabel token : sentence.get(CoreAnnotations.TokensAnnotation.class)){
 				tagged = token.get(CoreAnnotations.PartOfSpeechAnnotation.class);
-				System.out.println("parts of speech: " + tagged);
-				System.out.println("tagged token word: " + token.word());
 				listTaggers.add(tagged);
 				if(tagged.equals("MD")) {
 					verbIdentityObj.isVerbModal = true;
@@ -450,14 +456,6 @@ public class Main {
 		String []tokens = tagged.split(delim);
 		boolean isVerbPhrase = Arrays.asList(tokens).contains("VP");
 		
-//		for(int i = 0; i < listTaggers.size(); i++){
-//			if(listTaggers.get(i).equals("MD") && i != (listTaggers.size() - 1) && listTaggers.get(i+1).contains("VB")){ //it's a modal
-//				isVerbPhrase = true;
-//			} 
-//		}
-		
-		System.out.println("is verb phrase? " + isVerbPhrase);
-		System.out.println("tagged word: " + tagged);
 		verbIdentityObj.isVerbPhrase = isVerbPhrase; //temporary fix, we just want 
 		//want to look at the modal verb 
 		return verbIdentityObj;
